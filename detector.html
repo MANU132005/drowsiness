@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowsi-Tech Vision - Drowsiness Detection App</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-image: url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #fff;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+        
+        /* Navigation */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            background-color: #4CAF50;
+        }
+        
+        .trial-nav-button {
+            display: inline-block;
+            background-color: #FF5722;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .trial-nav-button:hover {
+            background-color: #E64A19;
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content */
+        .container {
+            padding: 150px 50px 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+        
+        .hero p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .cta-button:hover {
+            background-color: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .trial-button {
+            background-color: #FF5722;
+        }
+
+        .trial-button:hover {
+            background-color: #E64A19;
+        }
+
+        /* Detection Section */
+        .detection-section {
+            text-align: center;
+            margin: 60px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .video-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .alert {
+            color: #FF5722;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .stats {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .stat-box {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 8px;
+            min-width: 150px;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+        
+        .feature-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .feature-card p {
+            line-height: 1.6;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            background-color: rgba(0, 0, 0, 0.8);
+            margin-top: 60px;
+            border-radius: 10px;
+        }
+        
+        footer p {
+            margin-bottom: 10px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            
+            .container {
+                padding: 180px 20px 30px;
+            }
+            
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero p {
+                font-size: 18px;
+            }
+
+            .video-container {
+                width: 100%;
+                height: auto;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">Drowsi-Tech Vision</div>
+        <div class="nav-links">
+            <a href="#signin">Sign In</a>
+            <a href="#faq">FAQ</a>
+            <a href="#getapp">Get App</a>
+            <a href="#trial" class="trial-nav-button">Free Trial</a>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <section class="hero">
+            <h1>Stay Alert, Stay Safe</h1>
+            <p>Real-time drowsiness detection technology to prevent accidents and improve productivity</p>
+            <button id="startBtn" class="cta-button">Start Detection</button>
+        </section>
+        
+        <!-- Detection Section -->
+        <section class="detection-section">
+            <div class="video-container" id="videoContainer">
+                <video id="video" width="640" height="480" autoplay muted></video>
+                <canvas id="canvas" width="640" height="480"></canvas>
+            </div>
+            <div class="status" id="status">Status: Ready</div>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">EAR Ratio</div>
+                    <div class="stat-value" id="earValue">0.00</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Eyes Closed</div>
+                    <div class="stat-value" id="eyesClosedValue">0.0s</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Alarm</div>
+                    <div class="stat-value" id="alarmStatus">OFF</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Features Section -->
+        <section class="features">
+            <div class="feature-card">
+                <h3>Real-Time Monitoring</h3>
+                <p>Continuously tracks eye movements and facial expressions to detect signs of fatigue using just your device's camera.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Instant Alerts</h3>
+                <p>Immediately notifies you with audible alarms when drowsiness is detected, helping prevent accidents before they happen.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Advanced EAR Algorithm</h3>
+                <p>Uses Eye Aspect Ratio (EAR) to accurately detect eye closure states with high precision.</p>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Drowsi-Tech Vision. All rights reserved.</p>
+        <p>Designed to save lives through technology</p>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const startBtn = document.getElementById('startBtn');
+        const videoContainer = document.getElementById('videoContainer');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const statusElement = document.getElementById('status');
+        const earValueElement = document.getElementById('earValue');
+        const eyesClosedValueElement = document.getElementById('eyesClosedValue');
+        const alarmStatusElement = document.getElementById('alarmStatus');
+        const ctx = canvas.getContext('2d');
+
+        // Detection variables
+        let isDetecting = false;
+        let eyesClosedStartTime = null;
+        const EAR_THRESHOLD = 0.25; // Threshold for eye closure
+        const EYES_CLOSED_DURATION = 2000; // 2 seconds to trigger alert
+        
+        // Alarm sound
+        const alarmSound = new Audio('alarm-clock-90867.mp3');
+        alarmSound.loop = true;
+
+        // Load face-api.js models
+        async function loadModels() {
+            try {
+                statusElement.textContent = 'Status: Loading models...';
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                statusElement.textContent = 'Status: Ready';
+                startBtn.disabled = false;
+                console.log('Face detection models loaded successfully');
+            } catch (error) {
+                console.error('Error loading models:', error);
+                statusElement.textContent = 'Status: Error loading models';
+                statusElement.className = 'alert';
+            }
+        }
+
+        // Calculate distance between two points
+        function distance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        // Calculate Eye Aspect Ratio (EAR)
+        function calculateEAR(eyeLandmarks) {
+            // Vertical distances
+            const A = distance(eyeLandmarks[1], eyeLandmarks[5]);
+            const B = distance(eyeLandmarks[2], eyeLandmarks[4]);
+            // Horizontal distance
+            const C = distance(eyeLandmarks[0], eyeLandmarks[3]);
+            return (A + B) / (2 * C);
+        }
+
+        // Process each video frame
+        async function detectDrowsiness() {
+            if (!isDetecting) return;
+
+            try {
+                // Detect faces with landmarks
+                const detections = await faceapi.detectAllFaces(video, 
+                    new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw detections
+                faceapi.draw.drawDetections(canvas, detections);
+                faceapi.draw.drawFaceLandmarks(canvas, detections);
+
+                if (detections.length > 0) {
+                    const landmarks = detections[0].landmarks;
+                    const leftEye = landmarks.getLeftEye();
+                    const rightEye = landmarks.getRightEye();
+                    
+                    // Calculate EAR for both eyes
+                    const leftEAR = calculateEAR(leftEye);
+                    const rightEAR = calculateEAR(rightEye);
+                    const avgEAR = (leftEAR + rightEAR) / 2;
+                    
+                    // Update EAR display
+                    earValueElement.textContent = avgEAR.toFixed(2);
+                    
+                    // Check for eye closure
+                    if (avgEAR < EAR_THRESHOLD) {
+                        if (!eyesClosedStartTime) {
+                            eyesClosedStartTime = Date.now();
+                        }
+                        
+                        const durationClosed = Date.now() - eyesClosedStartTime;
+                        eyesClosedValueElement.textContent = (durationClosed / 1000).toFixed(1) + 's';
+                        
+                        if (durationClosed >= EYES_CLOSED_DURATION) {
+                            statusElement.textContent = 'DROWSINESS DETECTED!';
+                            statusElement.className = 'alert';
+                            alarmStatusElement.textContent = 'ON';
+                            alarmStatusElement.style.color = '#FF5722';
+                            
+                            // Play alarm
+                            if (alarmSound.paused) {
+                                alarmSound.play('australia-eas-alarm-267664.mp3').catch(e => console.log('Audio error:', e));
+                            }
+                            
+                            // Show notification if permitted
+                            if (Notification.permission === 'granted') {
+                                new Notification('Drowsiness Alert!', {
+                                    body: 'You appear to be drowsy. Please take a break!',
+                                    icon: 'https://cdn-icons-png.flaticon.com/512/3522/3522665.png'
+                                });
+                            }
+                        }
+                    } else {
+                        // Eyes are open
+                        eyesClosedStartTime = null;
+                        eyesClosedValueElement.textContent = '0.0s';
+                        statusElement.textContent = 'Status: Active';
+                        statusElement.className = 'status';
+                        alarmStatusElement.textContent = 'OFF';
+                        alarmStatusElement.style.color = '#4CAF50';
+                        
+                        // Stop alarm if playing
+                        if (!alarmSound.paused) {
+                            alarmSound.pause();
+                            alarmSound.currentTime = 0;
+                        }
+                    }
+                } else {
+                    // No face detected
+                    earValueElement.textContent = '0.00';
+                    eyesClosedValueElement.textContent = '0.0s';
+                    statusElement.textContent = 'Status: No face detected';
+                    statusElement.className = 'status';
+                    alarmStatusElement.textContent = 'OFF';
+                    alarmStatusElement.style.color = '#4CAF50';
+                    eyesClosedStartTime = null;
+                    
+                    // Stop alarm if playing
+                    if (!alarmSound.paused) {
+                        alarmSound.pause();
+                        alarmSound.currentTime = 0;
+                    }
+                }
+            } catch (error) {
+                console.error('Detection error:', error);
+                statusElement.textContent = 'Status: Detection error';
+                statusElement.className = 'alert';
+            }
+
+            // Continue processing
+            requestAnimationFrame(detectDrowsiness);
+        }
+
+        // Start/stop detection
+        startBtn.addEventListener('click', async () => {
+            try {
+                if (!isDetecting) {
+                    // Request camera access
+                    statusElement.textContent = 'Status: Accessing camera...';
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: 'user', // Front camera
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        },
+                        audio: false
+                    });
+                    
+                    video.srcObject = stream;
+                    videoContainer.style.display = 'block';
+                    
+                    // Start detection
+                    isDetecting = true;
+                    startBtn.textContent = 'Stop Detection';
+                    statusElement.textContent = 'Status: Detecting...';
+                    
+                    // Wait for video to play
+                    video.onplaying = () => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        detectDrowsiness();
+                    };
+                } else {
+                    // Stop detection
+                    isDetecting = false;
+                    startBtn.textContent = 'Start Detection';
+                    statusElement.textContent = 'Status: Ready';
+                    statusElement.className = 'status';
+                    videoContainer.style.display = 'none';
+                    
+                    // Stop video stream
+                    const stream = video.srcObject;
+                    if (stream) {
+                        stream.getTracks().forEach(track => track.stop());
+                        video.srcObject = null;
+                    }
+                    
+                    // Stop alarm
+                    if (!alarmSound.paused) {
+                        alarmSound.pause();
+                        alarmSound.currentTime = 0;
+                    }
+                    
+                    // Reset values
+                    earValueElement.textContent = '0.00';
+                    eyesClosedValueElement.textContent = '0.0s';
+                    alarmStatusElement.textContent = 'OFF';
+                    alarmStatusElement.style.color = '#4CAF50';
+                    eyesClosedStartTime = null;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusElement.textContent = 'Error: ' + error.message;
+                statusElement.className = 'alert';
+                isDetecting = false;
+                startBtn.textContent = 'Start Detection';
+            }
+        });
+
+        // Request notification permission
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission().then(permission => {
+                console.log('Notification permission:', permission);
+            });
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadModels();
+            startBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowsi-Tech Vision - Drowsiness Detection App</title>
+    <style>
+        /* Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-image: url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #fff;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+        
+        /* Navigation */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            background-color: #4CAF50;
+        }
+        
+        .trial-nav-button {
+            display: inline-block;
+            background-color: #FF5722;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .trial-nav-button:hover {
+            background-color: #E64A19;
+            transform: translateY(-2px);
+        }
+        
+        /* Main Content */
+        .container {
+            padding: 150px 50px 50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+        
+        .hero p {
+            font-size: 20px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background-color: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .trial-button {
+            background-color: #FF5722;
+        }
+
+        .trial-button:hover {
+            background-color: #E64A19;
+        }
+        
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+        
+        .feature-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .feature-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .feature-card p {
+            line-height: 1.6;
+        }
+        
+        /* Problem Section */
+        .problem-section {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 50px;
+            border-radius: 10px;
+            margin: 60px 0;
+        }
+        
+        .problem-section h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+        
+        .problem-section p {
+            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        /* Trial Section */
+        .trial-section {
+            text-align: center;
+            padding: 50px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 60px 0;
+            backdrop-filter: blur(5px);
+        }
+
+        .trial-section h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #FF5722;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            background-color: rgba(0, 0, 0, 0.8);
+            margin-top: 60px;
+        }
+        
+        footer p {
+            margin-bottom: 10px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            
+            .container {
+                padding: 180px 20px 30px;
+            }
+            
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero p {
+                font-size: 18px;
+            }
+            
+            .problem-section, .trial-section {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">Drowsi-Tech Vision</div>
+        <div class="nav-links">
+            <a href="#signin">Sign In</a>
+            <a href="#faq">FAQ</a>
+            <a href="#getapp">Get App</a>
+            <a href="#trial" class="trial-nav-button">Free Trial</a>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container">
+        <section class="hero">
+            <h1>Stay Alert, Stay Safe</h1>
+            <p>Real-time drowsiness detection technology to prevent accidents and improve productivity</p>
+            <a href="#getapp" class="cta-button">Download Now</a>
+        </section>
+        
+        <!-- Features Section -->
+        <section class="features">
+            <div class="feature-card">
+                <h3>Real-Time Monitoring</h3>
+                <p>Continuously tracks eye movements and facial expressions to detect signs of fatigue using just your smartphone's front camera.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Instant Alerts</h3>
+                <p>Immediately notifies you with audible alarms when drowsiness is detected, helping prevent accidents before they happen.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Lightweight & Offline</h3>
+                <p>Runs efficiently on Android devices without requiring internet connection, perfect for drivers and workers in remote locations.</p>
+            </div>
+        </section>
+        
+        <!-- Problem/Solution Section -->
+        <section class="problem-section">
+            <h2>The Problem We Solve</h2>
+            <p>Drowsiness while driving or performing critical tasks is a significant cause of accidents, injuries, and loss of productivity. Individuals, especially those in long-distance driving or those working extended shifts, often face fatigue that impairs their alertness and reaction time.</p>
+            
+            <p>Traditional solutions for drowsiness detection, such as specialized headgear or vehicle-integrated systems, tend to be expensive and not easily accessible to the general public.</p>
+            
+            <h2>Our Solution</h2>
+            <p>To address this problem, Drowsi-Tech Vision presents a real-time drowsiness detection application for Android devices. The app utilizes the front camera of a smartphone to monitor the user's eyes and face for signs of drowsiness. It is developed using Java in Android Studio and uses computer vision techniques to detect eye closure or fatigue. When the app detects prolonged eye closure, it triggers an alarm sound to alert the user immediately.</p>
+            
+            <p>This app is designed to be lightweight, efficient, and capable of running offline, making it an ideal solution for drivers, machine operators, and workers who need fatigue monitoring in real-time.</p>
+        </section>
+
+        <!-- Trial Section -->
+        <section class="trial-section">
+            <h2>Try Before You Buy</h2>
+            <p>Experience our premium features with a 7-day free trial. No credit card required.</p>
+<<<<<<< HEAD
+            <a href="./camera.html" class="cta-button trial-button">Start Free Trial</a>
+=======
+            <a href="./detector.html" class="cta-button">Start Free Trial</a>
+>>>>>>> 39ae1a95e7e2c2fe3d7cd914f27d733ed9ceb970
+        </section>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Drowsi-Tech Vision. All rights reserved.</p>
+        <p>Designed to save lives through technology</p>
+    </footer>
+</body>
+</html>
