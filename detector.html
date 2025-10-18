@@ -385,9 +385,60 @@
         const EAR_THRESHOLD = 0.25; // Threshold for eye closure
         const EYES_CLOSED_DURATION = 2000; // 2 seconds to trigger alert
         
-        // Alarm sound
-        const alarmSound = new Audio('alarm-clock-90867.mp3');
-        alarmSound.loop = true;
+        // Alarm sound using Web Audio API
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        let isAlarmPlaying = false;
+
+        // Create alarm sound
+        function createAlarmSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Create oscillator for the alarm sound
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            
+            // Configure oscillator
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            
+            // Configure gain for volume control
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+            
+            // Connect nodes
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Start oscillator
+            oscillator.start();
+            
+            // Create a pulsing effect
+            oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.2);
+            gainNode.gain.exponentialRampToValueAtTime(0.8, audioContext.currentTime + 0.2);
+            
+            // Schedule the next pulse
+            setTimeout(() => {
+                if (isAlarmPlaying) {
+                    oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                    gainNode.gain.exponentialRampToValueAtTime(0.5, audioContext.currentTime + 0.2);
+                }
+            }, 200);
+            
+            isAlarmPlaying = true;
+        }
+
+        // Stop alarm sound
+        function stopAlarmSound() {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator = null;
+                gainNode = null;
+                isAlarmPlaying = false;
+            }
+        }
 
         // Load face-api.js models
         async function loadModels() {
@@ -465,8 +516,8 @@
                             alarmStatusElement.style.color = '#FF5722';
                             
                             // Play alarm
-                            if (alarmSound.paused) {
-                                alarmSound.play('australia-eas-alarm-267664.mp3').catch(e => console.log('Audio error:', e));
+                            if (!isAlarmPlaying) {
+                                createAlarmSound();
                             }
                             
                             // Show notification if permitted
@@ -487,9 +538,8 @@
                         alarmStatusElement.style.color = '#4CAF50';
                         
                         // Stop alarm if playing
-                        if (!alarmSound.paused) {
-                            alarmSound.pause();
-                            alarmSound.currentTime = 0;
+                        if (isAlarmPlaying) {
+                            stopAlarmSound();
                         }
                     }
                 } else {
@@ -503,9 +553,8 @@
                     eyesClosedStartTime = null;
                     
                     // Stop alarm if playing
-                    if (!alarmSound.paused) {
-                        alarmSound.pause();
-                        alarmSound.currentTime = 0;
+                    if (isAlarmPlaying) {
+                        stopAlarmSound();
                     }
                 }
             } catch (error) {
@@ -563,9 +612,8 @@
                     }
                     
                     // Stop alarm
-                    if (!alarmSound.paused) {
-                        alarmSound.pause();
-                        alarmSound.currentTime = 0;
+                    if (isAlarmPlaying) {
+                        stopAlarmSound();
                     }
                     
                     // Reset values
